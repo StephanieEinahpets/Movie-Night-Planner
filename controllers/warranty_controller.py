@@ -4,10 +4,10 @@ from db import db
 from models.warranties import Warranties, warranty_schema
 from models.products import Products
 from util.reflection import populate_object
-from lib.authenticate import authenticate
+from lib.authenticate import authenticate_return_auth
 
 
-@authenticate
+@authenticate_return_auth
 def add_warranty():
   post_data = request.form if request.form else request.json
   product_id = post_data.get('product_id')
@@ -30,7 +30,7 @@ def add_warranty():
   return jsonify({"message": "warranty added", "result": warranty_schema.dump(new_warranty)}), 201
 
 
-@authenticate
+@authenticate_return_auth
 def get_warranty_by_id(warranty_id):
   warranty_query = db.session.query(Warranties).filter(Warranties.warranty_id == warranty_id).first()
   
@@ -40,7 +40,7 @@ def get_warranty_by_id(warranty_id):
   return jsonify({"message": "warranty found", "result": warranty_schema.dump(warranty_query)}), 200
 
 
-@authenticate
+@authenticate_return_auth
 def update_warranty_by_id(warranty_id):
   warranty_query = db.session.query(Warranties).filter(Warranties.warranty_id == warranty_id).first()
   
@@ -59,8 +59,11 @@ def update_warranty_by_id(warranty_id):
   return jsonify({"message": "warranty updated", "result": warranty_schema.dump(warranty_query)}), 200
 
 
-@authenticate
-def delete_warranty():
+@authenticate_return_auth
+def delete_warranty(auth_info):
+  if auth_info.user.role != 'admin':
+    return jsonify({"message": "unauthorized - admin only"}), 403
+
   post_data = request.form if request.form else request.json
   warranty_id = post_data.get('warranty_id')
 

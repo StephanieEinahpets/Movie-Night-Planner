@@ -4,10 +4,10 @@ from db import db
 from models.categories import Categories, category_schema, categories_schema
 from models.products_categories_xref import ProductsCategoriesXref
 from util.reflection import populate_object
-from lib.authenticate import authenticate
+from lib.authenticate import authenticate, authenticate_return_auth
 
 
-@authenticate
+@authenticate_return_auth
 def add_category():
   post_data = request.form if request.form else request.json
 
@@ -24,13 +24,13 @@ def add_category():
   return jsonify({"message": "category added", "result": category_schema.dump(new_category)}), 201
 
 
-@authenticate
+@authenticate_return_auth
 def get_all_categories():
   categories_query = db.session.query(Categories).all()
   return jsonify({"message": "categories found", "results": categories_schema.dump(categories_query)}), 200
 
 
-@authenticate
+@authenticate_return_auth
 def get_category_by_id(category_id):
   category_query = db.session.query(Categories).filter(Categories.category_id == category_id).first()
   
@@ -40,7 +40,7 @@ def get_category_by_id(category_id):
   return jsonify({"message": "category found", "result": category_schema.dump(category_query)}), 200
 
 
-@authenticate
+@authenticate_return_auth
 def update_category_by_id(category_id):
   category_query = db.session.query(Categories).filter(Categories.category_id == category_id).first()
   
@@ -59,8 +59,11 @@ def update_category_by_id(category_id):
   return jsonify({"message": "category updated", "result": category_schema.dump(category_query)}), 200
 
 
-@authenticate
-def delete_category():
+@authenticate_return_auth
+def delete_category(auth_info):
+  if auth_info.user.role != 'admin':
+    return jsonify({"message": "unauthorized - admin only"}), 403
+
   post_data = request.form if request.form else request.json
   category_id = post_data.get('category_id')
   category_query = db.session.query(Categories).filter(Categories.category_id == category_id).first()

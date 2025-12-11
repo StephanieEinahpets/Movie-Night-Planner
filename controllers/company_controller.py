@@ -6,10 +6,10 @@ from models.products import Products
 from models.products_categories_xref import ProductsCategoriesXref
 from models.warranties import Warranties
 from util.reflection import populate_object
-from lib.authenticate import authenticate
+from lib.authenticate import authenticate_return_auth
 
 
-@authenticate
+@authenticate_return_auth
 def add_company():
   post_data = request.form if request.form else request.json
 
@@ -26,13 +26,13 @@ def add_company():
   return jsonify({"message": "company added", "result": company_schema.dump(new_company)}), 201
 
 
-@authenticate
+@authenticate_return_auth
 def get_all_companies():
   companies_query = db.session.query(Companies).all()
   return jsonify({"message": "companies found", "results": companies_schema.dump(companies_query)}), 200
 
 
-@authenticate
+@authenticate_return_auth
 def get_company_by_id(company_id):
   company_query = db.session.query(Companies).filter(Companies.company_id == company_id).first()
 
@@ -42,7 +42,7 @@ def get_company_by_id(company_id):
   return jsonify({"message": "company found", "result": company_schema.dump(company_query)}), 200
 
 
-@authenticate
+@authenticate_return_auth
 def update_company_by_id(company_id):
   company_query = db.session.query(Companies).filter(Companies.company_id == company_id).first()
   
@@ -61,8 +61,11 @@ def update_company_by_id(company_id):
   return jsonify({"message": "company updated", "result": company_schema.dump(company_query)}), 200
 
 
-@authenticate
-def delete_company():
+@authenticate_return_auth
+def delete_company(auth_info):
+  if auth_info.user.role != 'admin':
+    return jsonify({"message": "unauthorized - admin only"}), 403
+  
   post_data = request.form if request.form else request.json
   company_id = post_data.get('company_id')
   company_query = db.session.query(Companies).filter(Companies.company_id == company_id).first()

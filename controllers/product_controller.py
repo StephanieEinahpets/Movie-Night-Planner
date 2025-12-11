@@ -7,10 +7,10 @@ from models.products_categories_xref import ProductsCategoriesXref, xref_schema
 from models.warranties import Warranties
 from models.categories import Categories
 from util.reflection import populate_object
-from lib.authenticate import authenticate
+from lib.authenticate import authenticate_return_auth
 
 
-@authenticate
+@authenticate_return_auth
 def add_product():
   post_data = request.form if request.form else request.json
   company_id = post_data.get('company_id')
@@ -33,19 +33,19 @@ def add_product():
   return jsonify({"message": "product added", "result": product_schema.dump(new_product)}), 201
 
 
-@authenticate
+@authenticate_return_auth
 def get_all_products():
   products_query = db.session.query(Products).all()
   return jsonify({"message": "products found", "results": products_schema.dump(products_query)}), 200
 
 
-@authenticate
+@authenticate_return_auth
 def get_all_active_products():
   products_query = db.session.query(Products).filter(Products.active == True).all()
   return jsonify({"message": "active products found", "results": products_schema.dump(products_query)}), 200
 
 
-@authenticate
+@authenticate_return_auth
 def get_product_by_id(product_id):
   product_query = db.session.query(Products).filter(Products.product_id == product_id).first()
   
@@ -55,13 +55,13 @@ def get_product_by_id(product_id):
   return jsonify({"message": "product found", "result": product_schema.dump(product_query)}), 200
 
 
-@authenticate
+@authenticate_return_auth
 def get_products_by_company_id(company_id):
   products_query = db.session.query(Products).filter(Products.company_id == company_id).all()
   return jsonify({"message": "products found", "results": products_schema.dump(products_query)}), 200
 
 
-@authenticate
+@authenticate_return_auth
 def update_product_by_id(product_id):
   product_query = db.session.query(Products).filter(Products.product_id == product_id).first()
   
@@ -80,8 +80,11 @@ def update_product_by_id(product_id):
   return jsonify({"message": "product updated", "result": product_schema.dump(product_query)}), 200
 
 
-@authenticate
-def delete_product():
+@authenticate_return_auth
+def delete_product(auth_info):
+  if auth_info.user.role != 'admin':
+    return jsonify({"message": "unauthorized - admin only"}), 403
+  
   post_data = request.form if request.form else request.json
   product_id = post_data.get('product_id')
 
@@ -103,7 +106,7 @@ def delete_product():
   return jsonify({"message": "product deleted", "result": product_schema.dump(product_query)}), 200
 
 
-@authenticate
+@authenticate_return_auth
 def add_product_category_association():
   post_data = request.form if request.form else request.json
   product_id = post_data.get('product_id')

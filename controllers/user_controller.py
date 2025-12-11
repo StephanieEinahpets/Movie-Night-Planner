@@ -35,8 +35,14 @@ def add_user():
 
 @authenticate_return_auth
 def get_all_users(auth_info):
-  users_query = db.session.query(AppUsers).all()
-  return jsonify({"message": "users found", "results": app_users_schema.dump(users_query)}), 200
+  user_query = db.session.query(AppUsers).all()
+  if auth_info.user.role == 'admin':
+    if not user_query:
+      return jsonify({"message": "users not founded."}),400
+    
+    return jsonify({"message":"users found", "results":app_user_schema.dump(user_query)}),200
+
+  return jsonify({"message":"unathorized"}),400
 
 
 @authenticate_return_auth
@@ -80,6 +86,9 @@ def update_user_by_id(user_id, auth_info):
 
 @authenticate_return_auth
 def delete_user(auth_info):
+  if auth_info.user.role != 'admin':
+    return jsonify({"message": "unauthorized - admin only"}), 403
+  
   post_data = request.form if request.form else request.json
   user_id = post_data.get('user_id')
 
