@@ -16,7 +16,7 @@ def auth_token_add():
   if not email or not password:
     return jsonify({"message": "invalid login"}), 401
   
-  now_datetime = datetime.now
+  now_datetime = datetime.now()
   expiration_datetime = now_datetime + timedelta(hours=12)
 
   user_query = db.session.query(AppUsers).filter(AppUsers.email == email).first()
@@ -48,9 +48,9 @@ def auth_token_add():
 @authenticate_return_auth
 def auth_token_delete(auth_info):
   try:
-    db.session.add(auth_info)
+    db.session.delete(auth_info)
     db.session.commit()
     return jsonify({"message": "logout successful"}), 200
   except Exception as e:
     db.session.rollback()
-    return jsonify({"message": "unable to logout"})
+    return jsonify({"message": "unable to logout"}), 400

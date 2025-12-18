@@ -3,46 +3,42 @@ from flask_bcrypt import generate_password_hash
 
 from db import db
 from models.app_users import AppUsers, app_user_schema, app_users_schema
-from models.companies import Companies
 from util.reflection import populate_object
 from lib.authenticate import authenticate_return_auth
 
 
 def add_user():
   post_data = request.form if request.form else request.json
-  company_id = post_data.get('company_id')
   
   new_user = AppUsers.new_user_obj()
   populate_object(new_user, post_data)
 
-  new_user.password = generate_password_hash(new_user.password).decode('utf8')
-
-  if company_id:
-    company_query = db.session.query(Companies).filter(Companies.company_id == company_id).first()
-
-    if company_query == None:
-      return jsonify({"message": "company_id is required"}), 400
+  if new_user.password:
+    new_user.password = generate_password_hash(new_user.password).decode('utf8')
+  else:
+    return jsonify({"message": "password is required"}), 400
 
   try:
     db.session.add(new_user)
     db.session.commit()
-  except:
+  except Exception as e:
     db.session.rollback()
-    return jsonify({"message": "unable to add record"}), 400
+    return jsonify({"message": "unable to add user - email or username may already exist"}), 400
   
   return jsonify({"message": "user added", "result": app_user_schema.dump(new_user)}), 201
 
 
 @authenticate_return_auth
 def get_all_users(auth_info):
+  if auth_info.user.role != 'admin':
+    return jsonify({"message": "unauthorized - admin only"}), 403
+  
   user_query = db.session.query(AppUsers).all()
-  if auth_info.user.role == 'admin':
-    if not user_query:
-      return jsonify({"message": "users not founded."}),400
-    
-    return jsonify({"message":"users found", "results":app_user_schema.dump(user_query)}),200
-
-  return jsonify({"message":"unathorized"}),400
+  
+  if not user_query:
+    return jsonify({"message": "no users found"}), 404
+  
+  return jsonify({"message": "users found", "results": app_users_schema.dump(user_query)}), 200
 
 
 @authenticate_return_auth
@@ -77,9 +73,9 @@ def update_user_by_id(user_id, auth_info):
 
   try:
     db.session.commit()
-  except:
+  except Exception as e:
     db.session.rollback()
-    return jsonify({"message": "unable to update record"}), 400
+    return jsonify({"message": "unable to update user"}), 400
 
   return jsonify({"message": "user updated", "result": app_user_schema.dump(user_query)}), 200
 
@@ -92,6 +88,9 @@ def delete_user(auth_info):
   post_data = request.form if request.form else request.json
   user_id = post_data.get('user_id')
 
+  if not user_id:
+    return jsonify({"message": "user_id is required"}), 400
+
   user_query = db.session.query(AppUsers).filter(AppUsers.user_id == user_id).first()
 
   if not user_query:
@@ -100,8 +99,8 @@ def delete_user(auth_info):
   try:
     db.session.delete(user_query)
     db.session.commit()
-  except:
+  except Exception as e:
     db.session.rollback()
-    return jsonify({"message": "unable to delete record"}), 400
+    return jsonify({"message": "unable to delete user"}), 400
 
   return jsonify({"message": "user deleted", "result": app_user_schema.dump(user_query)}), 200

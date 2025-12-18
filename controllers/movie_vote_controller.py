@@ -1,0 +1,112 @@
+from flask import jsonify, request
+
+from db import db
+from models.movie_votes import MovieVotes, movie_vote_schema, movie_votes_schema
+from models.movies import Movies, movie_schema
+from util.reflection import populate_object
+from lib.authenticate import authenticate_return_auth, authenticate
+
+
+@authenticate_return_auth
+def add_movie_vote(auth_info):
+  post_data = request.form if request.form else request.json
+  
+  new_movie_vote = MovieVotes.new_movie_vote_obj()
+  populate_object(new_movie_vote, post_data)
+  
+  if not new_movie_vote.user_id:
+    new_movie_vote.user_id = auth_info.user.user_id
+
+  try:
+    db.session.add(new_movie_vote)
+    db.session.commit()
+    
+  except Exception as e:
+    db.session.rollback()
+    return jsonify({"message": "unable to add movie vote"}), 400
+  
+  return jsonify({"message": "movie vote added", "result": movie_vote_schema.dump(new_movie_vote)}), 201
+
+
+@authenticate
+def add_vote_to_movie():
+  post_data = request.form if request.form else request.json
+
+  movie_vote_id = post_data.get('movie_vote_id')
+  movie_id = post_data.get('movie_id')
+
+  movie_query = db.session.query(Movies).filter(Movies.movie_id == movie_id).first()
+  movie_vote_query = db.session.query(MovieVotes).filter(MovieVotes.movie_vote_id == movie_vote_id).first()
+
+  if movie_query:
+    movie_vote_query.movies.append(movie_query)
+    db.session.commit()
+
+    return jsonify({"message": "vote added to movie", "result": movie_vote_schema.dump(movie_vote_query)}), 200
+  
+  return jsonify({"message": "unable to add vote to movie"})
+
+
+@authenticate
+def get_all_movie_votes():
+  movie_vote_query = db.session.query(MovieVotes).all()
+  
+  if not movie_vote_query:
+    return jsonify({"message": "no movie votes found"}), 404
+  
+  return jsonify({"message": "movie votes found", "results": movie_votes_schema.dump(movie_vote_query)}), 200
+
+
+@authenticate
+def get_movie_vote_by_id(movie_vote_id):
+  movie_vote_query = db.session.query(MovieVotes).filter(MovieVotes.movie_vote_id == movie_vote_id).first()
+  
+  if not movie_vote_query:
+    return jsonify({"message": "movie vote not found"}), 404
+  
+  return jsonify({"message": "movie vote found", "result": movie_vote_schema.dump(movie_vote_query)}), 200
+
+
+@authenticate_return_auth
+def update_movie_vote_by_id(movie_vote_id, auth_info):
+  movie_vote_query = db.session.query(MovieVotes).filter(MovieVotes.movie_vote_id == movie_vote_id).first()
+  
+  if not movie_vote_query:
+    return jsonify({"message": "movie vote not found"}), 404
+
+  if auth_info.user.role != 'admin' and movie_vote_query.user_id != auth_info.user.user_id:
+    return jsonify({"message": "unauthorized - can only update own votes"}), 403
+
+  put_data = request.form if request.form else request.json
+  populate_object(movie_vote_query, put_data)
+
+  try:
+    db.session.commit()
+  except Exception as e:
+    db.session.rollback()
+    return jsonify({"message": "unable to update movie vote"}), 400
+
+  return jsonify({"message": "movie vote updated", "result": movie_vote_schema.dump(movie_vote_query)}), 200
+
+
+@authenticate_return_auth
+def delete_movie_vote(auth_info):
+  post_data = request.form if request.form else request.json
+  movie_vote_id = post_data.get('movie_vote_id')
+
+  movie_vote_query = db.session.query(MovieVotes).filter(MovieVotes.movie_vote_id == movie_vote_id).first()
+
+  if not movie_vote_query:
+    return jsonify({"message": "movie vote not found"}), 404
+
+  if auth_info.user.role != 'admin' and movie_vote_query.user_id != auth_info.user.user_id:
+    return jsonify({"message": "unauthorized - can only delete own votes"}), 403
+
+  try:
+    db.session.delete(movie_vote_query)
+    db.session.commit()
+  except Exception as e:
+    db.session.rollback()
+    return jsonify({"message": "unable to delete movie vote"}), 400
+
+  return jsonify({"message": "movie vote deleted", "result": movie_vote_schema.dump(movie_vote_query)}), 200

@@ -25,6 +25,6 @@ class AuthTokensSchema(ma.Schema):
   auth_token = ma.fields.UUID()
   expiration = ma.fields.DateTime(required=True)
 
-  user = ma.fields.Nested("AppUsersSchema", only=['user_id', 'first_name', 'last_name', 'email', 'role', 'active'])
+  user = ma.fields.Nested("AppUsersSchema", only=['user_id', 'username', 'email', 'role'])
 
 auth_token_schema = AuthTokensSchema()

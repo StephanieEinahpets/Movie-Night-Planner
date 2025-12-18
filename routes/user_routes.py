@@ -24,4 +24,3 @@ def update_user_by_id_route(user_id):
 @users.route('/user/delete', methods=['DELETE'])
 def delete_user_route():
   return controllers.delete_user()
-
