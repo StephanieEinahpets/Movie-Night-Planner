@@ -8,43 +8,53 @@ from lib.authenticate import authenticate_return_auth, authenticate
 
 
 @authenticate_return_auth
-def add_movie_vote(auth_info):
-  post_data = request.form if request.form else request.json
+def add_vote_to_movie(auth_info):
+    post_data = request.form if request.form else request.json
+    movie_id = post_data.get("movie_id")
+    voted_for = post_data.get("voted_for")  # True/False for yes/no vote
+
+    if not movie_id:
+        return jsonify({"message": "movie_id is required"}), 400
+    if voted_for is None:
+        return jsonify({"message": "voted_for is required"}), 400
+
+    movie = db.session.query(Movies).filter(Movies.movie_id == movie_id).first()
+    if not movie:
+        return jsonify({"message": "movie not found"}), 404
+
+    new_vote = MovieVotes.new_movie_vote_obj()
+    new_vote.user_id = auth_info.user.user_id
+    new_vote.voted_for = voted_for
+
+    new_vote.movies.append(movie)
+
+    try:
+        db.session.add(new_vote)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": "unable to add movie vote", "error": str(e)}), 400
+
+    return jsonify({"message": "vote added to movie", "result": movie_vote_schema.dump(new_vote)}), 201
+
+
+# @authenticate
+# def add_vote_to_movie():
+#   post_data = request.form if request.form else request.json
+
+#   movie_vote_id = post_data.get('movie_vote_id')
+#   movie_id = post_data.get('movie_id')
+
+#   movie_query = db.session.query(Movies).filter(Movies.movie_id == movie_id).first()
+#   movie_vote_query = db.session.query(MovieVotes).filter(MovieVotes.movie_vote_id == movie_vote_id).first()
+
+#   if movie_query:
+#     movie_vote_query.movies.append(movie_query)
+#     db.session.commit()
+
+#     return jsonify({"message": "vote added to movie", "result": movie_vote_schema.dump(movie_vote_query)}), 200
   
-  new_movie_vote = MovieVotes.new_movie_vote_obj()
-  populate_object(new_movie_vote, post_data)
-  
-  if not new_movie_vote.user_id:
-    new_movie_vote.user_id = auth_info.user.user_id
-
-  try:
-    db.session.add(new_movie_vote)
-    db.session.commit()
-    
-  except Exception as e:
-    db.session.rollback()
-    return jsonify({"message": "unable to add movie vote"}), 400
-  
-  return jsonify({"message": "movie vote added", "result": movie_vote_schema.dump(new_movie_vote)}), 201
-
-
-@authenticate
-def add_vote_to_movie():
-  post_data = request.form if request.form else request.json
-
-  movie_vote_id = post_data.get('movie_vote_id')
-  movie_id = post_data.get('movie_id')
-
-  movie_query = db.session.query(Movies).filter(Movies.movie_id == movie_id).first()
-  movie_vote_query = db.session.query(MovieVotes).filter(MovieVotes.movie_vote_id == movie_vote_id).first()
-
-  if movie_query:
-    movie_vote_query.movies.append(movie_query)
-    db.session.commit()
-
-    return jsonify({"message": "vote added to movie", "result": movie_vote_schema.dump(movie_vote_query)}), 200
-  
-  return jsonify({"message": "unable to add vote to movie"})
+#   return jsonify({"message": "unable to add vote to movie"})
 
 
 @authenticate

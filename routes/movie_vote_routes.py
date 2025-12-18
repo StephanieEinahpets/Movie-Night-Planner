@@ -6,8 +6,8 @@ movievotes = Blueprint('movievotes', __name__)
 
 
 @movievotes.route('/movievote', methods=['POST'])
-def add_vote_to_movies_route():
-  return controllers.add_movie_vote()
+def add_vote_to_movie_route():
+  return controllers.add_vote_to_movie()
 
 @movievotes.route('/movievotes', methods=['GET'])
 def get_all_movie_votes_route():

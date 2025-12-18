@@ -18,8 +18,8 @@ def get_movie_image_by_id_route(movie_image_id):
   return controllers.get_movie_image_by_id(movie_image_id)
 
 @movieimages.route('/movieimage/<movie_image_id>', methods=['PUT'])
-def update_movie_image_by_id_route(movie_image_id):
-  return controllers.update_movie_image_by_id(movie_image_id)
+def update_movie_image_route(movie_image_id):
+  return controllers.update_movie_image(movie_image_id)
 
 @movieimages.route('/movieimage/delete', methods=['DELETE'])
 def delete_movie_image_route():

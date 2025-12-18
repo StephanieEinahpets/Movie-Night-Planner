@@ -52,15 +52,6 @@ def get_movie_image_by_id(movie_image_id):
   return jsonify({"message": "movie image found", "result": movie_image_schema.dump(image)}), 200
 
 
-def get_movie_image_by_movie_id(movie_id):
-  image = db.session.query(MovieImages).filter(MovieImages.movie_id == movie_id).first()
-  if not image:
-    return jsonify({"message": "movie image not found"}), 404
-
-  return jsonify({"message": "movie image found", "result": movie_image_schema.dump(image)}), 200
-
-
-
 @authenticate_return_auth
 def update_movie_image(movie_image_id, auth_info):
   image = db.session.query(MovieImages).filter(MovieImages.movie_image_id == movie_image_id).first()
@@ -84,7 +75,13 @@ def update_movie_image(movie_image_id, auth_info):
 
 
 @authenticate_return_auth
-def delete_movie_image(movie_image_id, auth_info):
+def delete_movie_image(auth_info):
+  post_data = request.form if request.form else request.json
+  movie_image_id = post_data.get('movie_image_id')
+
+  if not movie_image_id:
+    return jsonify({"message": "movie_image_id is required"}), 400
+
   image = db.session.query(MovieImages).filter(MovieImages.movie_image_id == movie_image_id).first()
   if not image:
     return jsonify({"message": "movie image not found"}), 404

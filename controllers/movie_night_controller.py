@@ -73,13 +73,17 @@ def delete_movie_night(auth_info):
   post_data = request.form if request.form else request.json
   movie_night_id = post_data.get('movie_night_id')
 
-  movie_night_query = db.session.query(MovieNights).filter(MovieNights.movie_night_id == movie_night_id).first()
+  if not movie_night_id:
+    return jsonify({"message": "movie_night_id is required"}), 400
 
+  movie_night_query = db.session.query(MovieNights).filter(MovieNights.movie_night_id == movie_night_id).first()
   if not movie_night_query:
     return jsonify({"message": "movie night not found"}), 404
 
   if auth_info.user.role != 'admin' and movie_night_query.host_user_id != auth_info.user.user_id:
     return jsonify({"message": "unauthorized - can only delete own movie nights"}), 403
+
+  result = movie_night_schema.dump(movie_night_query)
 
   try:
     db.session.delete(movie_night_query)
@@ -88,4 +92,4 @@ def delete_movie_night(auth_info):
     db.session.rollback()
     return jsonify({"message": "unable to delete movie night"}), 400
 
-  return jsonify({"message": "movie night deleted", "result": movie_night_schema.dump(movie_night_query)}), 200
+  return jsonify({"message": "movie night deleted", "result": result}), 200
