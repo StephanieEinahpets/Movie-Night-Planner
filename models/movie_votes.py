@@ -29,7 +29,7 @@ class MovieVotesSchema(ma.Schema):
 
   movie_vote_id = ma.fields.UUID()
   user_id = ma.fields.UUID(required=True)
-  voted_for = ma.fields.Boolean(required=True)
+  voted_for = ma.fields.Boolean()
   user = ma.fields.Nested("AppUsersSchema", only=['user_id', 'username', 'email'])
   movies = ma.fields.Nested("MoviesSchema", many=True, only=['movie_id', 'title'])
 
