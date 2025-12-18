@@ -2,11 +2,11 @@
 
 A Flask-based REST API for organizing movie nights with friends, including user authentication, movie recommendations, voting, and snack coordination.
 
-> Create accounts and authenticate securely
-> Recommend movies with details and images
-> Host and manage movie night events
-> Vote on movie selections
-> Coordinate snacks for each movie night
+= Create accounts and authenticate securely
+= Recommend movies with details and images
+= Host and manage movie night events
+= Vote on movie selections
+= Coordinate snacks for each movie night
 
 Users can only modify their own data & Admins have elevated privileges
 

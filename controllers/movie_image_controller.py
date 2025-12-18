@@ -44,32 +44,30 @@ def get_all_movie_images():
   return jsonify({"message": "movie images found", "results": movie_images_schema.dump(movie_image_query)}), 200
 
 
-def get_movie_image_by_movie_id(movie_id):
-  image = db.session.query(MovieImages).filter(MovieImages.movie_id == movie_id).first()
-
+def get_movie_image_by_id(movie_image_id):
+  image = db.session.query(MovieImages).filter(MovieImages.movie_image_id == movie_image_id).first()
   if not image:
     return jsonify({"message": "movie image not found"}), 404
 
   return jsonify({"message": "movie image found", "result": movie_image_schema.dump(image)}), 200
 
-def get_movie_image_by_id(movie_image_id):
-  image = db.session.query(MovieImages).filter(MovieImages.movie_image_id == movie_image_id).first()
 
+def get_movie_image_by_movie_id(movie_id):
+  image = db.session.query(MovieImages).filter(MovieImages.movie_id == movie_id).first()
   if not image:
     return jsonify({"message": "movie image not found"}), 404
 
-  return jsonify({"message": "movie image found","result": movie_image_schema.dump(image)}), 200
+  return jsonify({"message": "movie image found", "result": movie_image_schema.dump(image)}), 200
+
 
 
 @authenticate_return_auth
 def update_movie_image(movie_image_id, auth_info):
   image = db.session.query(MovieImages).filter(MovieImages.movie_image_id == movie_image_id).first()
-
   if not image:
     return jsonify({"message": "movie image not found"}), 404
 
   movie = image.movie
-
   if auth_info.user.role != 'admin' and movie.recommender_id != auth_info.user.user_id:
     return jsonify({"message": "unauthorized"}), 403
 
@@ -88,12 +86,10 @@ def update_movie_image(movie_image_id, auth_info):
 @authenticate_return_auth
 def delete_movie_image(movie_image_id, auth_info):
   image = db.session.query(MovieImages).filter(MovieImages.movie_image_id == movie_image_id).first()
-
   if not image:
     return jsonify({"message": "movie image not found"}), 404
 
   movie = image.movie
-
   if auth_info.user.role != 'admin' and movie.recommender_id != auth_info.user.user_id:
     return jsonify({"message": "unauthorized"}), 403
 
