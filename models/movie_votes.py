@@ -10,7 +10,7 @@ class MovieVotes(db.Model):
 
   movie_vote_id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
   user_id = db.Column(UUID(as_uuid=True), db.ForeignKey('AppUsers.user_id'), nullable=False)
-  voted_for = db.Boolean()
+  voted_for = db.Column(db.Boolean, nullable=False)
 
   user = db.relationship("AppUsers", back_populates="movie_votes")
   movies = db.relationship("Movies", secondary=movie_votes_association_table, back_populates="movie_votes")
@@ -19,8 +19,8 @@ class MovieVotes(db.Model):
     self.user_id = user_id
     self.voted_for = voted_for
 
-  def new_movie_vote_obj():
-    return MovieVotes('', None)
+  # def new_movie_vote_obj():
+  #   return MovieVotes('', None)
 
 
 class MovieVotesSchema(ma.Schema):
